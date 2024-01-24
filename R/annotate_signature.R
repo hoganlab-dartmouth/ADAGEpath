@@ -75,7 +75,7 @@ fetch_geneset <- function(type = "KEGG", username = NULL, access_date = NULL,
       gene_sets <- jsonlite::fromJSON(tribe_content)
 
       if (gene_sets$meta$total_count > 0) {
-        gene_sets_df <- dplyr::data_frame(title = gene_sets$objects$title,
+        gene_sets_df <- dplyr::data.frame(title = gene_sets$objects$title,
                                           genes = gene_sets$objects$tip$genes,
                                           count = gene_sets$objects$tip_item_count)
         gene_sets_df_list[[request_time]] <- gene_sets_df
@@ -128,7 +128,7 @@ fetch_geneset <- function(type = "KEGG", username = NULL, access_date = NULL,
       gene_sets <- jsonlite::fromJSON(tribe_content)
 
       if (gene_sets$meta$total_count > 0) {
-        gene_sets_df <- dplyr::data_frame(title = gene_sets$objects$title,
+        gene_sets_df <- dplyr::data.frame(title = gene_sets$objects$title,
                                           genes = sapply(gene_sets$objects$versions,
                                                          function(x) unlist(x[1, "genes"])))
         gene_sets_df$count <- sapply(gene_sets_df$genes, function(x) length(x))
