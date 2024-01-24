@@ -52,7 +52,7 @@ signature_geneset_activity <- function(signature_geneset_df, gene_set_list,
   })
 
   # transpose to have signatures in rows
-  activities <- dplyr::as_data_frame(t(activities))
+  activities <- dplyr::as.data.frame(t(activities))
 
   # omit positive and negative signs of activities
   activities <- abs(activities)
