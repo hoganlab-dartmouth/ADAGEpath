@@ -51,7 +51,7 @@ calculate_activity <- function(input_data, model, HW_cutoff = 2.5){
                                          data.frame(HWactivity_perGene_neg))
 
   # transpose to have signatures in rows
-  HWactivity_perGene <- dplyr::as.data.frame(t(HWactivity_perGene))
+  HWactivity_perGene <- dplyr::as_tibble(t(HWactivity_perGene))
 
   # omit positive and negative signs of activities
   HWactivity_perGene <- abs(HWactivity_perGene)
