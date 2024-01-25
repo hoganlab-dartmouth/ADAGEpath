@@ -112,7 +112,7 @@ get_active_signatures <- function(limma_result, method = "pareto",
 
   # build the test_result data.frame with only difference in mean and the adjusted
   # p value after -log10 transform
-  test_result <- tibble(signature = rownames(limma_result),
+  test_result <- tibble::as.data.frame(signature = rownames(limma_result),
                                     diff = limma_result$logFC,
                                     neglog10qvalue = -log10(limma_result$adj.P.Val))
 
@@ -213,7 +213,7 @@ plot_volcano <- function(limma_result, highlight_signatures = NULL,
 
   # build the test_result data.frame with only difference in mean and the adjusted
   # p value after -log10 transform
-  test_result <- tibble(signature = rownames(limma_result),
+  test_result <- tibble::as.data.frame(signature = rownames(limma_result),
                                     diff = limma_result$logFC,
                                     neglog10qvalue = -log10(limma_result$adj.P.Val))
 
