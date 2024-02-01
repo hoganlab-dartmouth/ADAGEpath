@@ -1,61 +1,48 @@
 ---
-title: "Process RNAseq dataset"
-author: "Jie Tan"
-date: "`r Sys.Date()`"
-output:
-  rmarkdown::html_vignette:
-    fig_width: 7
-    fig_height: 7
-vignette: >
-  %\VignetteIndexEntry{RNAseq example}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+title: "E-GEOD-64056 RNAseq Pairwise Comparisons"
+author: "Jay Goddard"
+date: "2024-01-31"
+output: html_document
 ---
+Adapted from RNAseq user input workflow vignettes originally developed by Jie Tan of the [Greene Lab](https://github.com/greenelab/ADAGEpath).
+
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This is an example for analyzing an RNA-seq dataset of *Pseudomonas aeruginosa*
-PA14 strain. The package currently
-only supports processed RNA-seq expression data: expression values of each
-sample at the gene level.
+## Loading Packages
 
-# Data preparation
-Load in required libraries.
+ADAGEpath installation requires particular co-depencies. See [Github location](https://github.com/hoganlab-dartmouth/ADAGEpath/blob/master/README.md) for full list and instructions for package installation.
 
-```{r}
-library("ADAGEpath")
+```{r package-installation, message=FALSE}
+library(ADAGEpath)
+library("tidyverse")
 library("DT")
-library("readr")
-library("plyr")
+library("knitr")
 ```
+
+## Loading eADAGE compendium/model
 
 Before any analysis, we need to specify the ADAGE model and the data compendium
 we want to use.
 
-```{r}
+```{r compendium-loading}
 model <- eADAGEmodel
 compendium <- PAcompendium
 probe_dist <- probedistribution
 ```
 
-We use dataset
-[E-GEOD-64056](https://www.ebi.ac.uk/arrayexpress/experiments/E-GEOD-64056/)
-as an example here. Let's first download the zip file that stores processed
-expression values for each sample and unzip it.
+## Dataset download/loading
 
-```{r}
-download.file("https://www.ebi.ac.uk/arrayexpress/files/E-GEOD-64056/E-GEOD-64056.processed.1.zip",
-              destfile = "download/E-GEOD-64056.processed.1.zip")
-unzip(zipfile = "download/E-GEOD-64056.processed.1.zip",
-      exdir = "download/E-GEOD-64056.processed.1")
-```
+Carrying this pairwise parsing analysis out on [E-GEOD-64056](https://www.ebi.ac.uk/arrayexpress/experiments/E-GEOD-64056/). These **processed** RNAseq files were downloaded individually/directly from ArrayExpress. Alternatively, results files from an RNAseq experiment can be processed and loaded as a single csv file (code chunk titled data-import-2), and are available within the vignettes/download/ location of this R package on GitHub.
 
-This dataset contains 6 RNA-seq samples and 2 CHIP-seq samples. We next read in
-all the RNA-seq samples and combine them into one data.frame.
+Dataset titled: *Cross-regulation between the response regulators PhoB and TctD allows for the integration of diverse environmental signals in Pseudomonas aeruginosa*
 
-```{r}
+Data import option for individual files for each sample:
+```{r data-import, message=FALSE}
+#make sure working directory of file is where downloaded files are
+setwd("/PATH/TO/DATA/FILES/")
 # RNAseq files end with "rpg.txt"
 RNAseq_files <- list.files("download/E-GEOD-64056.processed.1/",
                              pattern = "*.rpg.txt")
@@ -67,43 +54,340 @@ colnames(RNAseq_data) <- c("geneID", RNAseq_files)
 DT::datatable(RNAseq_data)
 ```
 
-The gene IDs in this dataset are in the format of "PA14_XXXXX,symbol". We need
-to clean them to only contain "PA14_XXXXX".
+Data import option for single file containing processed RNAseq data for all samples in experiment:
+```{r data-import-2, message=FALSE}
+#make sure working directory of file is where downloaded files are
+#setwd("/PATH/TO/DATA/FILES/")
 
+#RNAseq_data <- read_csv("download/E-GEOD-64056_processed.csv")
+#DT::datatable(RNAseq_data)
+```
+
+
+The gene IDs in this dataset are in the format of "PA14_XXXXX,symbol". We need to clean them to only contain "PA14_XXXXX".
 ```{r}
 RNAseq_data$geneID <- sapply(RNAseq_data$geneID,
                              function(x) unlist(strsplit(x, ","))[1])
 ```
 
-Now the `RNAseq_data` is in the right format that can be processed by the
-`load_dataset` function. This processing step will take a while, because it
-needs to first map PA14 gene IDs to PAO1 gene IDs. Then it needs to impute
-the expression of missing genes. Finally it normalizes RNAseq expression
-values to comparable ranges with microarray expression values using
-[TDM](https://github.com/greenelab/TDM).
+Now the `RNAseq_data` is in the right format that can be processed by the `load_dataset` function. This processing step will take a while, because it needs to first map PA14 gene IDs to PAO1 gene IDs. Then it needs to impute the expression of missing genes. Finally it normalizes RNAseq expression values to comparable ranges with microarray expression values using [TDM](https://github.com/greenelab/TDM)
 
-```{r, results = "hide"}
+```{r, warning=FALSE}
 data_raw <- load_dataset(input = RNAseq_data, isProcessed = TRUE,
                          isRNAseq = TRUE, model = model,
                          compendium = compendium, quantile_ref = probe_dist,
                          norm01 = FALSE)
 ```
 
-ADAGE only accepts expression values in the (0,1) range. We linearly transform
-expression values to be between 0 and 1 using the Pa compendium as the reference.
+ADAGE only accepts expression values in the (0,1) range. We linearly transform expression values to be between 0 and 1 using the Pa compendium as the reference.
 
-```{r}
+```{r, warning=FALSE}
 data_normed <- zeroone_norm(input_data = data_raw, use_ref = TRUE,
                             ref_data = compendium)
 ```
 
-Now let's specify the phenotypes for each sample. It needs to be a character
-vector and has the same sample order as the expression data loaded above.
+Now let's specify the phenotypes for each sample. It needs to be a character vector and has the same sample order as the expression data loaded above.
+*If your dataset only includes two groups for comparison, you can use the second set of commands in the next few code chunks, which have been commented out*
 
 ```{r}
 data_pheno <- c("phoB", "phoB", "tctD", "tctD", "wt", "wt")
+#data_pheno <- c("mt", "mt", "mt", "wt", "wt", "wt")
 ```
 
-Now this RNAseq dataset is ready for ADAGE signature analysis. Please refer
-to this [vignette](User-input-example.html) on how to perform ADAGE signature
-analysis.
+The limma functions at the core of the group contrasts are currently set up for two-way comparisons. To perform multiple sets of contrasts in a single run, we will need to subset the `data_normed` dataframe to match the designated groups defined above in `data_pheno`. *Note that the following code chunk is unnecessary if your `data_pheno` only includes two groups for comparison.*
+
+To do that, we will parse out three data_pheno sets to interact with moving forward:
+  A: phoB vs wt
+  B: tctD vs wt
+  C: phoB vs tctD
+```{r}
+data_normed_A <- data_normed[,c(1,2,3,6,7)]
+data_normed_B <- data_normed[,c(1,4,5,6,7)]
+data_normed_C <- data_normed[,c(1,2,3,4,5)]
+```
+
+Now, data labeling guides for ADAGE signature analysis:
+```{r}
+data_pheno_A <- c("phoB", "phoB", "wt", "wt")
+data_pheno_B <- c("tctD", "tctD", "wt", "wt")
+data_pheno_C <- c("phoB", "phoB", "tctD", "tctD")
+```
+
+## Activity calculation
+We calculate the activity of each signature for each sample in the dataset.
+
+```{r, message=FALSE, warning=FALSE}
+data_activity_A <- calculate_activity(input_data = data_normed_A, model = model)
+data_activity_B <- calculate_activity(input_data = data_normed_B, model = model)
+data_activity_C <- calculate_activity(input_data = data_normed_C, model = model)
+```
+
+The returned `data_activity` is a `data.frame` with signature names in the first column and activity values per sample starting from the second column.
+
+## Active signature detection
+We want to find signatures that are differentially active between phoB and tctD mutants, and wildtype samples. 
+
+We use [limma](https://bioconductor.org/packages/release/bioc/html/limma.html) to perform a differential activation test. limma is more robust than a simple t test when sample size is small. A two-group limma analysis is provided in the function `build_limma()`. You can also build other limma models to test signatures' activities when the experimental design is more complex.
+
+*In the limma test, we will use "wt" as the control phenotype. Because there are a lot of signatures passing the significance cutoff, here we use the more stringent Bonferroni procedure instead of the Benjamini–Hochberg procedure for multiple hypothesis correction.*
+
+
+```{r}
+#library("limma")
+limma_result_A <- build_limma(data_activity_A, phenotypes = data_pheno_A,
+                            control_pheno = "wt",
+                            use.bonferroni = TRUE)
+limma_result_B <- build_limma(data_activity_B, phenotypes = data_pheno_B,
+                            control_pheno = "wt",
+                            use.bonferroni = TRUE)
+limma_result_C <- build_limma(data_activity_C, phenotypes = data_pheno_C,
+                            control_pheno = "tctD",
+                            use.bonferroni = TRUE)
+```
+
+To take both absolute activity difference and significance into account, we use pareto fronts to pick the most differentially active signatures. We extract differentially active signatures in the first 10 layers of pareto fronts. Modify `N_fronts` to get more or fewer signatures.
+
+```{r, warning=FALSE}
+active_sigs_A <- get_active_signatures(limma_result = limma_result_A,
+                                     pheno_group = "both", 
+                                     method = "pareto", N_fronts = 10)
+active_sigs_B <- get_active_signatures(limma_result = limma_result_B,
+                                     pheno_group = "both", 
+                                     method = "pareto", N_fronts = 10)
+active_sigs_C <- get_active_signatures(limma_result = limma_result_C,
+                                     pheno_group = "both", 
+                                     method = "pareto", N_fronts = 10)
+```
+
+*Signatures that are differentially active between either phoB or tctD mutants, and wildtype are:*
+```{r}
+active_sigs_A
+active_sigs_B
+```
+
+*Signatures that are differentially active between phoB and tctD mutants are:*
+```{r}
+active_sigs_C
+```
+
+*For each comparison above, we will:*
+
+Plot each signature's activity change and significance in the `limma` test.
+
+Look at how the activities of active signature vary across samples
+
+```{r, message=FALSE}
+plot_volcano(limma_result = limma_result_A, highlight_signatures = active_sigs_A,
+             interactive = TRUE)
+plot_activity_heatmap(activity = data_activity_A, signatures = active_sigs_A)
+```
+
+```{r, message=FALSE}
+plot_volcano(limma_result = limma_result_B, highlight_signatures = active_sigs_B,
+             interactive = TRUE)
+plot_activity_heatmap(activity = data_activity_B, signatures = active_sigs_B)
+```
+
+```{r, message=FALSE}
+plot_volcano(limma_result = limma_result_C, highlight_signatures = active_sigs_C,
+             interactive = TRUE)
+plot_activity_heatmap(activity = data_activity_C, signatures = active_sigs_C)
+```
+
+
+## Overlapping signature removal
+To reduce the number of signatures to look at, we can check whether these active signatures overlap with each other.
+
+`plot_signature_overlap` creates a heatmap of odds ratios. The odds ratio represents the odds that two signatures share a specific number of genes.
+
+```{r}
+signature_similarity_A <- plot_signature_overlap(selected_signatures = active_sigs_A,
+                                               model = model)
+signature_similarity_B <- plot_signature_overlap(selected_signatures = active_sigs_B,
+                                               model = model)
+signature_similarity_C <- plot_signature_overlap(selected_signatures = active_sigs_C,
+                                               model = model)
+```
+
+Next we calculate the marginal activities of similar signatures. Marginal activity is defined as the activity of signature A after removing genes that it shares with signature B.
+
+```{r, message=FALSE}
+marginal_activity_A <- calculate_marginal_activity(input_data = data_normed_A,
+                                                 selected_signatures = active_sigs_A,
+                                                 model = model)
+marginal_activity_B <- calculate_marginal_activity(input_data = data_normed_B,
+                                                 selected_signatures = active_sigs_B,
+                                                 model = model)
+marginal_activity_C <- calculate_marginal_activity(input_data = data_normed_C,
+                                                 selected_signatures = active_sigs_C,
+                                                 model = model)
+```
+
+
+Again, we build a limma model to test whether these marginal activities are still strongly different between two conditions.
+
+```{r}
+marginal_limma_A <- build_limma(input_data = marginal_activity_A,
+                              phenotypes = data_pheno_A, control_pheno = "wt")
+marginal_limma_B <- build_limma(input_data = marginal_activity_B,
+                              phenotypes = data_pheno_B, control_pheno = "wt")
+marginal_limma_C <- build_limma(input_data = marginal_activity_C,
+                              phenotypes = data_pheno_C, control_pheno = "tctD")
+```
+
+Let's visualize the marginal activities in a matrix heatmap.  The value in this matrix represents the -log10 transformed adjusted p value in the activation test when the effect of the column signature is removed from the row signature. Values in the diagonal of the heatmap are the activation significance of signatures themselves. Activation significance below the cutoff is marked by a cross sign.
+
+```{r}
+plot_marginal_activation(marginal_limma_result = marginal_limma_A,
+                         signature_order = colnames(signature_similarity_A),
+                         sig_cutoff = 0.05)
+```
+
+```{r}
+plot_marginal_activation(marginal_limma_result = marginal_limma_B,
+                         signature_order = colnames(signature_similarity_B),
+                         sig_cutoff = 0.05)
+```
+
+```{r}
+plot_marginal_activation(marginal_limma_result = marginal_limma_C,
+                         signature_order = colnames(signature_similarity_C),
+                         sig_cutoff = 0.05)
+```
+
+Based on these plots, we can some signatures are completely masked by another: if we remove the genes in common between two signatures, a signature that becomes non-significant is considered masked by the other. Additionally, *we can see that some nodes have unique genes that make them significant even after removing the effect of another signature.* We can safely remove a signature being masked by another signature as long as we keep the second signature.
+
+```{r, warning=FALSE}
+unique_active_sigs_A <- remove_redundant_signatures(marginal_limma_A,
+                                                  sig_cutoff = 0.05)
+unique_active_sigs_A
+```
+
+*Continuing with the phoB vs wt comparison, we will:*
+
+Check out each signature's activity change and significance after removing overlapping signatures.
+
+Look at how the activities of active signature vary across samples after removing overlapping signatures.
+
+```{r, message=FALSE}
+plot_volcano(limma_result_A, highlight_signatures = unique_active_sigs_A,
+             interactive = TRUE)
+
+plot_activity_heatmap(activity = data_activity_A, signatures = unique_active_sigs_A)
+```
+
+For the two remaining contrasts we have carried out thus far, we will perform the same signature overlap steps.
+
+```{r, warning=FALSE}
+unique_active_sigs_B <- remove_redundant_signatures(marginal_limma_B,
+                                                  sig_cutoff = 0.05)
+unique_active_sigs_B
+plot_volcano(limma_result_B, highlight_signatures = unique_active_sigs_B,
+             interactive = TRUE)
+plot_activity_heatmap(activity = data_activity_B, signatures = unique_active_sigs_B)
+```
+
+
+```{r, warning=FALSE}
+unique_active_sigs_C <- remove_redundant_signatures(marginal_limma_C,
+                                                  sig_cutoff = 0.05)
+unique_active_sigs_C
+plot_volcano(limma_result_C, highlight_signatures = unique_active_sigs_C,
+             interactive = TRUE)
+plot_activity_heatmap(activity = data_activity_C, signatures = unique_active_sigs_C)
+```
+
+
+### Genes in signatures
+To review a signature, we can list all genes in it.
+
+**Calling node164pos and node75pos here, as 164pos appears to differentiate phoB vs both wt and tctD, and 75pos appears to differentiate phoB from wt (in a way that is not noticed in tctD vs wt calls)**
+```{r}
+DT_1 <- DT::datatable(annotate_genes_in_signatures(selected_signatures = "Node164pos",
+                                           model = model))
+DT_2 <- DT::datatable(annotate_genes_in_signatures(selected_signatures = "Node75pos",
+                                           model = model))
+DT_1
+DT_2
+```
+
+**At first glance:**
+
+phoB: meaningful differentiation at node164pos, and at node75pos. 
+
+  *It might also be useful to look at genes shared with from 164pos with 108neg and 190pos that led to removal*
+  
+tctD: there does not seem to be anything meaningful differentiating tctD mutants from wt, or from phoB.
+
+  *However, it might be useful to go back into nodes 108neg and 190pos and compare what genes these have in common with 164pos, that led to their removal during generation of unique_active_sigs*
+
+
+**We can also review a group of signatures, in this case both 164pos and 75pos, that we looked at individually in the step before**
+
+```{r}
+DT::datatable(annotate_genes_in_signatures(selected_signatures = unique_active_sigs_A,
+                                           model = model))
+```
+
+
+### Gene-gene network
+We check how genes in the active signatures cluster in the ADAGE gene-genenetwork.
+
+We calculate an expression fold change for each gene and pass it to the gene-gene network to show as node color. Again, we use limma to test differential expression and get the logFC.
+
+First, must parse **raw** dataset into distinct comparisons, as we subset the `data_normed` earlier to perform activity calculations and signature analyses.
+
+```{r}
+data_raw_A <- data_raw[,c(1,2,3,6,7)]
+data_raw_B <- data_raw[,c(1,4,5,6,7)]
+data_raw_C <- data_raw[,c(1,2,3,4,5)]
+```
+
+```{r, warning=FALSE}
+data_raw_limma_A <- build_limma(input_data = data_raw_A, phenotypes = data_pheno_A,
+                              control_pheno = "wt")
+# build a gene:fold change table from limma result
+gene_logFC_A <- data.frame(geneID = rownames(data_raw_limma_A),
+                         logFC = data_raw_limma_A$logFC)
+```
+
+*Visualize the ADAGE gene-gene network of the active signatures.*
+```{r}
+visualize_gene_network(selected_signatures = unique_active_sigs_A,
+                       gene_color_value = gene_logFC_A,
+                       model = model, cor_cutoff = 0.5)
+```
+
+**Still visualizing comparison A (phoB vs wt), but with nodes added back in that were removed due to overlap with 164pos node (notably for looking at node 108neg and 190pos)**
+
+```{r}
+visualize_gene_network(selected_signatures = active_sigs_A,
+                       gene_color_value = gene_logFC_A,
+                       model = model, cor_cutoff = 0.5)
+```
+
+
+**Looking at the tctD vs wt comparison B:**
+```{r, warning=FALSE}
+data_raw_limma_B <- build_limma(input_data = data_raw_B, phenotypes = data_pheno_B,
+                              control_pheno = "wt")
+# build a gene:fold change table from limma result
+gene_logFC_B <- data.frame(geneID = rownames(data_raw_limma_B),
+                         logFC = data_raw_limma_B$logFC)
+visualize_gene_network(selected_signatures = unique_active_sigs_B,
+                       gene_color_value = gene_logFC_B,
+                       model = model, cor_cutoff = 0.5)
+```
+
+
+**And finally, looking at the phoB vs tctD comparison C:**
+```{r, warning=FALSE}
+data_raw_limma_C <- build_limma(input_data = data_raw_C, phenotypes = data_pheno_C,
+                              control_pheno = "tctD")
+# build a gene:fold change table from limma result
+gene_logFC_C <- data.frame(geneID = rownames(data_raw_limma_C),
+                         logFC = data_raw_limma_C$logFC)
+visualize_gene_network(selected_signatures = unique_active_sigs_C,
+                       gene_color_value = gene_logFC_C,
+                       model = model, cor_cutoff = 0.5)
+```
