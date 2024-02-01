@@ -116,25 +116,37 @@ and control.
 
 You can install the latest development version from github with
 ``` r
-install.packages("devtools")
-devtools::install_github("greenelab/ADAGEpath")
-```
-If you want to build the vignettes, run
-``` r
-devtools::install_github("greenelab/ADAGEpath", build_vignettes = TRUE)
-```
-You can also install it via BioInstaller
-``` r
 library(BiocInstaller)
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("greenelab/ADAGEpath")
+BiocManager::install("hoganlab-dartmouth/ADAGEpath")
 ```
 For earlier verisons of R ( < 3.5), instead use
 ``` r
 library(BiocInstaller)
-biocLite("greenelab/ADAGEpath")
+biocLite("hoganlab-dartmouth/ADAGEpath")
 ```
+
+You can also install it via devtools
+``` r
+install.packages("devtools")
+devtools::install_github("hoganlab-dartmouth/ADAGEpath")
+```
+If you want to build the vignettes, run
+``` r
+devtools::install_github("hoganlab-dartmouth/ADAGEpath", build_vignettes = TRUE)
+```
+####Codependencies
+You will need the following to install ADAGEpath and utilize its vignette workflows:
+affy
+BiocManager
+DT
+impute
+terra
+rmarkdown
+knitr
+XQuartz (for macOS)
+
 
 #### Potential problems during installation:
 
