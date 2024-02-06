@@ -136,7 +136,8 @@ If you want to build the vignettes, run
 ``` r
 devtools::install_github("hoganlab-dartmouth/ADAGEpath", build_vignettes = TRUE)
 ```
-####Codependencies
+#### Codependencies
+
 You will need the following to install ADAGEpath and utilize its vignette workflows:
 
 - XQuartz (for macOS)
