@@ -139,21 +139,21 @@ devtools::install_github("hoganlab-dartmouth/ADAGEpath", build_vignettes = TRUE)
 ####Codependencies
 You will need the following to install ADAGEpath and utilize its vignette workflows:
 
--XQuartz (for macOS)
+- **XQuartz (for macOS)
 
--affy
+- **affy
 
--BiocManager
+- **BiocManager
 
--DT
+- **DT
 
--impute
+- **impute
 
--terra
+- **terra
 
--rmarkdown
+- **rmarkdown
 
--knitr
+- **knitr
 
 
 #### Potential problems during installation:
