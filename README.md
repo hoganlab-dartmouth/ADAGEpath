@@ -142,13 +142,13 @@ You will need the following to install ADAGEpath and utilize its vignette workfl
 
 - XQuartz (for macOS)
 
-- affy
+- affy (may require BiocGenerics)
 
 - BiocManager
 
 - DT
 
-- impute
+- impute (available through BioConductor)
 
 - terra
 
