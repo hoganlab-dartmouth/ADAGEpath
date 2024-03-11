@@ -138,6 +138,17 @@ devtools::install_github("hoganlab-dartmouth/ADAGEpath", build_vignettes = TRUE)
 ```
 #### Codependencies
 
+Recommended (if you are new to or rarely use R), when installing packages, use:
+
+install.packages("package name", dependencies = TRUE)
+
+instead of the default:
+
+install.packages("package name")
+
+This will help you avoid manually troubleshooting other packages your system might need.
+
+
 You will need the following to install ADAGEpath and utilize its vignette workflows:
 
 - XQuartz (for macOS)
