@@ -35,7 +35,8 @@ probe_dist <- probedistribution
 
 ## Dataset download/loading
 
-Carrying this pairwise parsing analysis out on [E-GEOD-64056](https://www.ebi.ac.uk/arrayexpress/experiments/E-GEOD-64056/). These **processed** RNAseq files were downloaded individually/directly from ArrayExpress. Alternatively, results files from an RNAseq experiment can be processed and loaded as a single csv file (code chunk titled data-import-2), and are available within the vignettes/download/ location of this R package on GitHub.
+Carrying this pairwise parsing analysis out on [E-GEOD-64056](https://www.ebi.ac.uk/arrayexpress/experiments/E-GEOD-64056/). These **processed** RNAseq files were downloaded individually/directly from ArrayExpress. Alternatively, results files from an RNAseq experiment can be processed and loaded as a single csv file (code chunk titled data-import-2), which is available within the /inst/extdata
+/E-GEOD-64056/ location of this R package on GitHub.
 
 Dataset titled: *Cross-regulation between the response regulators PhoB and TctD allows for the integration of diverse environmental signals in Pseudomonas aeruginosa*
 
